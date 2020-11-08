@@ -1,0 +1,24 @@
+sudo: required
+language: generic
+
+services:
+  - docker
+
+before_install:
+  - docker build -t jkonovsky/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true jkonovsky/react-test npm test
+
+after_success:
+  - docker build -t jkonovsky/multi-client ./client
+  - docker build -t jkonovsky/multi-nginx ./nginx
+  - docker build -t jkonovsky/multi-server ./server
+  - docker build -t jkonovsky/multi-worker ./worker
+  # Log in to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take those images and push them to docker hub
+  - docker push jkonovsky/multi-client
+  - docker push jkonovsky/multi-nginx
+  - docker push jkonovsky/multi-server
+  - docker push jkonovsky/multi-worker
